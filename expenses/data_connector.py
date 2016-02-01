@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from sqlalchemy import create_engine
-from data_model import Base, Currency, Category
+from expenses.data_model import Base, Currency, Category
 from sqlalchemy.orm import sessionmaker
 
 

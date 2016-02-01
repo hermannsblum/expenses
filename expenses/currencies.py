@@ -1,5 +1,5 @@
 from requests import get
-from data_model import Expense, Category
+from expenses.data_model import Expense, Category
 import calendar
 import datetime as dt
 
