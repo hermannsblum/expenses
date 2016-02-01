@@ -1,5 +1,5 @@
-from data_connector import db_create
-from user_input import str_input
+from expenses.data_connector import db_create
+from command_line.user_input import str_input
 
 
 if __name__ == '__main__':
