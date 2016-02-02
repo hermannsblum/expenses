@@ -105,7 +105,8 @@ class App():
 
     def stats(self):
         now = dt.datetime.now()
-        categories = statistics(self.db, now.year, now.month)
+        month = type_input('month', int, default=now.month)
+        categories = statistics(self.db, now.year, month)
 
         print('\nStatistics for {}'.format(dt.datetime.today().strftime('%B')))
         for key, amount in categories.items():
