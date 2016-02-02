@@ -51,6 +51,8 @@ class App():
                 self.edit_categories()
 
     def track_expense(self):
+        simple = bool_question('simple dialogue?', default=True)
+
         price = type_input('price', float)
         price = int(price * 100)
 
@@ -58,18 +60,27 @@ class App():
 
         currency = query_choice(self.db.query(Currency))
 
-        if bool_question('Not issued right now?', default=False):
-            issued = dt_input('Date if issue')
-        else:
-            issued = dt.datetime.now()
-
+        # initialize with simple setup
+        issued = dt.datetime.now()
         note = None
-        if bool_question('Do you want to add a note?', default=False):
-            note = str_input('Note')
+        end = None
+        repeat = None
 
-        end = issued
-        if bool_question('long term expense?', default=False):
-            end = dt_input('End if expense')
+        if not simple:
+            if bool_question('Not issued right now?', default=False):
+                issued = dt_input('Date if issue')
+
+            if bool_question('Do you want to add a note?', default=False):
+                note = str_input('Note')
+
+            if bool_question('long term expense?', default=False):
+                end = dt_input('End if expense')
+
+            if bool_question('repeat?', default=False):
+                repeat = type_input('Repeat this expense every _ months', int,
+                                    default=-1)
+                if repeat == -1:
+                    repeat = None
 
         eur = to_eur(price, currency.identifier, issued)
         print('That was an expense of {:.2f}€'.format(eur / 100.0))
@@ -79,6 +90,7 @@ class App():
                           in_eur=eur,
                           note=note,
                           end=end,
+                          repeat_interval=repeat,
                           currency=currency,
                           category=cat)
         self.db.add(expense)

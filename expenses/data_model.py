@@ -12,6 +12,7 @@ class Expense(Base):
     id = Column(Integer, primary_key=True)
     issued = Column(DateTime)
     end = Column(DateTime)
+    repeat_interval = Column(Integer)
     price = Column(Integer)
     in_eur = Column(Integer)
     note = Column(String(50))
