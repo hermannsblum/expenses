@@ -108,12 +108,18 @@ class App():
         month = type_input('month', int, default=now.month)
         (categories, repeaters) = statistics(self.db, now.year, month)
 
-        print('\nStatistics for {}'.format(dt.datetime.today().strftime('%B')))
-        for key, amount in categories.items():
-            print('{cat.name}: {amount:.2f}€'.format(
-                cat=self.db.query(Category).get(key), amount=amount / 100.0))
+        print('\nStatistics for {}'.format(
+            dt.datetime(now.year, month, 1).strftime('%B')))
 
-        print('\n with these repeating expenses considered')
+        total = 0
+        for key, amount in categories.items():
+            total += amount
+            amount_str = '{:.2f}'.format(amount / 100.0)
+            print('{cat.name:>15}: {amount:>8}€'.format(
+                cat=self.db.query(Category).get(key), amount=amount_str))
+        print('{:>15}: {:>8}€'.format('TOTAL', '{:.2f}'.format(total / 100.0)))
+
+        print('\nwith these repeating expenses considered')
         for item in repeaters:
             print(item)
         print('\n')
