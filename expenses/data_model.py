@@ -23,9 +23,10 @@ class Expense(Base):
 
     def __str__(self):
         date_string = self.issued.strftime("%Y-%m-%d %H:%M")
-        return ('{time}: {price:.2f}'
-                '{s.currency.symbol}, {s.category.name}').format(
-                    time=date_string, price=self.price / 100.0, s=self)
+        price_str = "{:.2f}".format(self.price / 100.0)
+        return ('{time}: {price:>8} {s.currency.symbol}, {s.category.name}'
+                '  |  {s.note}').format(
+                    time=date_string, price=price_str, s=self)
 
 
 class Currency(Base):
