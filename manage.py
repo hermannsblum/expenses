@@ -1,5 +1,5 @@
-from expenses.data_connector import db_create
-from command_line.user_input import str_input
+from expenses.data_connector import db_create, write_config
+from command_line.user_input import str_input, bool_question
 
 
 if __name__ == '__main__':
@@ -13,3 +13,6 @@ if __name__ == '__main__':
         db_password = str_input('database password', default='123456')
 
     db_create(db_name, password=db_password)
+
+    if bool_question('store login in config?', default=True):
+        write_config({'db': db_name, 'password': db_password})

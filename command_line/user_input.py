@@ -88,11 +88,16 @@ def list_choice(list):
 def query_choice(query):
     identifiers = {}
     has_name = hasattr(query.first(), 'name')
+    i = 1
     for item in query:
+        identifiers[i] = item
         if has_name:
-            identifiers[item.name] = item.id
+            name = item.name
         else:
-            identifiers[str(item)] = item.id
+            name = str(item)
+        print('{index} - {name}'.format(index=i, name=name))
+        i += 1
 
-    choosen_name = list_choice(list(identifiers.keys()))
-    return query.get(identifiers[choosen_name])
+    valid_inputs = [str(x) for x in identifiers.keys()]
+    choice = int(list_input('choice form list', valid_inputs))
+    return identifiers[choice]

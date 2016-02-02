@@ -1,4 +1,5 @@
-from expenses.data_connector import db_connect, db_disconnect
+from expenses.data_connector import db_connect, db_disconnect,\
+    load_config
 from command_line.user_input import type_input, list_choice,\
     query_choice, bool_question, str_input, dt_input
 from expenses.data_model import Expense, Currency, Category
@@ -11,14 +12,28 @@ from os.path import exists
 class App():
 
     def __init__(self):
-        file_valid = False
-        while not file_valid:  # test if file exists
-            db_name = str_input('datenbank', default='test') + '.db'
-            file_valid = exists(db_name)
-            if not file_valid:
-                print('File not found :(')
+        self.config = load_config()
+
+        if 'db' not in self.config:
+            file_valid = False
+            while not file_valid:  # test if file exists
+                db_name = str_input('datenbank', default='test') + '.db'
+                file_valid = exists(db_name)
+                if not file_valid:
+                    print('File not found :(')
+        else:
+            db_name = self.config['db']
 
         success = False
+        if 'password' in self.config:
+            database = db_connect(db_name, password=self.config['password'])
+            try:
+                database.query(Currency).all()
+                success = True
+            except DatabaseError:
+                success = False
+                # now user can still input
+
         while not success:
             db_password = str_input('passwort', default='123456')
             database = db_connect(db_name, password=db_password)
@@ -51,22 +66,20 @@ class App():
                 self.edit_categories()
 
     def track_expense(self):
-        simple = bool_question('simple dialogue?', default=True)
-
         price = type_input('price', float)
         price = int(price * 100)
 
-        cat = query_choice(self.db.query(Category))
-
         currency = query_choice(self.db.query(Currency))
 
+        cat = query_choice(self.db.query(Category))
+
+        advanced = bool_question('advanced options?', default=False)
         # initialize with simple setup
         issued = dt.datetime.now()
         note = None
         end = None
         repeat = None
-
-        if not simple:
+        if advanced:
             if bool_question('Not issued right now?', default=False):
                 issued = dt_input('Date if issue')
 
@@ -96,7 +109,7 @@ class App():
         self.db.add(expense)
         self.db.commit()
 
-        if bool_question('another expense?', default=False):
+        if bool_question('another expense?', default=True):
             self.track_expense()
 
     def history(self):
@@ -115,16 +128,18 @@ class App():
         for key, amount in categories.items():
             total += amount
             amount_str = '{:.2f}'.format(amount / 100.0)
-            print('{cat.name:>15}: {amount:>8}€'.format(
+            print('{cat.name:>16}: {amount:>8} €'.format(
                 cat=self.db.query(Category).get(key), amount=amount_str))
-        print('{:>15}: {:>8}€'.format('TOTAL', '{:.2f}'.format(total / 100.0)))
+        print('{:>16}: {:>8} €'.format(
+            'TOTAL', '{:.2f}'.format(total / 100.0)))
 
         print('\nwith these repeating expenses considered')
         for item in repeaters:
             print(item)
-        print('\n')
 
     def edit_categories(self):
+        for item in self.db.query(Category):
+            print(item.name)
         menu = list_choice(['add', 'edit', 'delete', 'back'])
         if menu == 'add':
             new = Category(name=str_input('Name'))

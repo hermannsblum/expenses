@@ -82,7 +82,6 @@ def repeating_expense(item, end_of_month):
         start_month += step
         end_month += step
 
-
     return amount
 
 

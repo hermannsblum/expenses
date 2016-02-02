@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from expenses.data_model import Base, Currency, Category
 from sqlalchemy.orm import sessionmaker
+import json
+from datetime import datetime
 
 
 def get_engine(name, password):
@@ -63,3 +65,53 @@ def standard_data():
 
     categories = [Category(name='Sonstiges')]
     return currencies + categories
+
+
+def write_backup(db):
+    backup = ""
+
+    backup += "Currencies\n"
+    for item in db.query(Currency):
+        backup += json.dumps(item.__dict__) + '\n'
+
+    backup += "Categories\n"
+    for item in db.query(Category):
+        backup += json.dumps(item.__dict__) + '\n'
+
+    backup += "Expenses\n"
+    for item in db.query(Expense):
+        backup += json.dumps(item.__dict__) + '\n'
+
+    filename = "backup_{:%Y%m%d}.expense".format(datetime.today())
+    f = open(filename, 'w')
+    f.write(backup)
+    f.close()
+
+
+def load_backup(db, filename):
+    # clear database
+    meta = MetaData()
+    trans = db.begin()
+    for table in reversed(meta.sorted_tables):
+        db.execute(table.delete())
+    trans.commit()
+
+    with open(filename, 'r') as f:
+        for line in f:
+            if line not in ["Currencies", "Expenses", "Categories"]:
+                item = json.loads(line)
+                db.add(**item)
+    db.commit()
+
+
+def write_config(config):
+    with open('config.json', 'w') as f:
+        json.dump(config, f)
+    f.close()
+
+
+def load_config():
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+    f.close()
+    return config
