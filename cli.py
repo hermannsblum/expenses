@@ -106,13 +106,17 @@ class App():
     def stats(self):
         now = dt.datetime.now()
         month = type_input('month', int, default=now.month)
-        categories = statistics(self.db, now.year, month)
+        (categories, repeaters) = statistics(self.db, now.year, month)
 
         print('\nStatistics for {}'.format(dt.datetime.today().strftime('%B')))
         for key, amount in categories.items():
             print('{cat.name}: {amount:.2f}€'.format(
                 cat=self.db.query(Category).get(key), amount=amount / 100.0))
-        print('')
+
+        print('\n with these repeating expenses considered')
+        for item in repeaters:
+            print(item)
+        print('\n')
 
     def edit_categories(self):
         menu = list_choice(['add', 'edit', 'delete', 'back'])

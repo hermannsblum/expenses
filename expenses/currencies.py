@@ -82,6 +82,7 @@ def repeating_expense(item, end_of_month):
         start_month += step
         end_month += step
 
+
     return amount
 
 
@@ -107,7 +108,11 @@ def statistics(db, year, month, debug=False):
         categories[item.category_id] += amount
 
     # repeating expenses
+    repeaters = []
     for item in db.query(Expense).filter(Expense.repeat_interval.isnot(None)):
         amount = repeating_expense(item, end_of_month)
         categories[item.category_id] += amount
-    return categories
+        if amount > 0:
+            repeaters.append(item)
+
+    return categories, repeaters
