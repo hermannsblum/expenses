@@ -28,6 +28,12 @@ class Expense(Base):
                 '  |  {s.note}').format(
                     time=date_string, price=price_str, s=self)
 
+    def _to_dict(self):
+        return {'id': self.id,
+                'issued': self.issued,
+                'end': self.end,
+                }
+
 
 class Currency(Base):
     __tablename__ = 'currencies'

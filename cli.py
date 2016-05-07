@@ -1,5 +1,5 @@
 from expenses.data_connector import db_connect, db_disconnect,\
-    load_config
+    load_config, write_backup, load_backup
 from command_line.user_input import type_input, list_choice,\
     query_choice, bool_question, str_input, dt_input
 from expenses.data_model import Expense, Currency, Category
@@ -7,6 +7,7 @@ from expenses.currencies import to_eur, statistics
 from sqlalchemy.exc import DatabaseError
 import datetime as dt
 from os.path import exists
+from os import listdir
 
 
 class App():
@@ -48,22 +49,29 @@ class App():
         self.db = database
 
     def end(self):
+        if 'backup_dir' not in self.config:
+            backup_dir = str_input('specify backup directory')
+            self.config['backup_dir'] = backup_dir
+
+        write_backup(self.db, self.config['backup_dir'])
         db_disconnect(self.db)
 
     def main_menu(self):
         menu = ''
         while menu != 'exit':
             menu = list_choice(['track expense', 'last month',
-                                'edit categories', 'exit'])
+                                'categories', 'load backup', 'exit'])
             if menu == 'exit':
                 self.end()
-            if menu == 'track expense':
+            elif menu == 'track expense':
                 self.track_expense()
-            if menu == 'last month':
+            elif menu == 'last month':
                 self.history()
                 self.stats()
-            if menu == 'edit categories':
+            elif menu == 'categories':
                 self.edit_categories()
+            elif menu == 'load backup':
+                self.select_backup()
 
     def track_expense(self):
         price = type_input('price', float)
@@ -151,6 +159,16 @@ class App():
             rm = query_choice(self.db.query(Category))
             self.db.delete(rm)
         self.db.commit()
+
+    def select_backup(self):
+        filename = list_choice(listdir(self.config['backup_dir']))
+        if bool_question('are you sure you want to overwrite all data?',
+                         default=False):
+            # first of all, backup existing data
+            write_backup(self.db, self.config['backup_dir'])
+
+            # now load new data
+            load_backup(self.db, filename, self.config['backup_dir'])
 
 
 if __name__ == '__main__':
