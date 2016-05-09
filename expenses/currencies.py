@@ -91,7 +91,7 @@ def statistics(db, year, month, debug=False):
     max_day = calendar.monthrange(year, month)[1]
     start_of_month = dt.datetime(year, month, 1)
     end_of_month = dt.datetime(year, month, max_day)
-    # simple expenses
+    # simple expenses which count into this month
     for item in db.query(Expense).filter(
             Expense.end.is_(None), Expense.repeat_interval.is_(None),
             Expense.issued >= start_of_month,
