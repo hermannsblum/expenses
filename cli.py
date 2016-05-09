@@ -13,7 +13,10 @@ from os import listdir
 class App():
 
     def __init__(self):
-        self.config = load_config()
+        try:
+            self.config = load_config()
+        except FileNotFoundError:
+            print('No config found, please try python manage.py')
 
         if 'db' not in self.config:
             file_valid = False
