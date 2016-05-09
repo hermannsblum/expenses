@@ -1,5 +1,5 @@
 from expenses.data_connector import db_connect, db_disconnect,\
-    load_config, write_backup, load_backup
+    load_config, write_backup, load_backup, remove_old_backups
 from command_line.user_input import type_input, list_choice,\
     query_choice, bool_question, str_input, dt_input
 from expenses.data_model import Expense, Currency, Category
@@ -17,6 +17,8 @@ class App():
             self.config = load_config()
         except FileNotFoundError:
             print('No config found, please try python manage.py')
+            backup_dir = str_input('backup directory', default='backup')
+            self.config = {'backup_dir': backup_dir}
 
         if 'db' not in self.config:
             file_valid = False
@@ -57,6 +59,7 @@ class App():
             self.config['backup_dir'] = backup_dir
 
         write_backup(self.db, self.config['backup_dir'])
+        remove_old_backups(self.config['backup_dir'])
         db_disconnect(self.db)
 
     def main_menu(self):

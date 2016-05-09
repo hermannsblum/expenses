@@ -96,6 +96,7 @@ def datetime_parser(obj):
             return parsed
         except ValueError:
             return obj
+    return obj
 
 
 def write_backup(db, backup_directory):
@@ -109,62 +110,6 @@ def write_backup(db, backup_directory):
                       type(getattr(item, x)) in allowed_types)]
         item_dict = {field: getattr(item, field) for field in fields}
         return json.dumps(item_dict, default=datetime_serializer)
-
-    def remove_old_backups():
-        """Remove old backups.
-
-        Keep 5 newest backups of the day,
-        newest backup of every day this month,
-        newest backup of every month.
-        """
-        # read backup directory, only backups should be here
-        backup_list = listdir(backup_directory)
-        today = []
-        this_month = []
-        monthly = []
-        for filename in backup_list:
-            if not filename.endswith('.expense'):
-                # not a backup
-                break
-
-            now = datetime.now()
-            try:
-                time = datetime.strptime(filename, backup_filename)
-                if time.date() == now.date():
-                    today.append(time)
-                elif time.year == now.year and time.month == now.month:
-                    this_month.append(time)
-                else:
-                    monthly.append(time)
-            except ValueError:
-                print("Could not delete this old backup, did not understand"
-                      " the nameing format: %s" % filename)
-
-        # keep maximum 5 per day
-        today.sort(reverse=True)
-        to_remove = today[5:]
-
-        # keep maximum of 1 per day for the rest of the month
-        duplicates = []
-        for time in this_month:
-            same_date = [backup for backup in this_month
-                         if backup.date() == time.date()]
-            same_date.sort(reverse=True)
-            duplicates.extend(same_date[1:])
-        to_remove.extend(set(duplicates))
-
-        # for the rest, keep 1 per month
-        duplicates = []
-        for time in monthly:
-            same_date = [backup for backup in this_month
-                         if backup.month == time.month]
-            same_date.sort(reverse=True)
-            duplicates.extend(same_date[1:])
-        to_remove.extend(set(duplicates))
-
-        # now remove all files
-        for time in to_remove:
-            remove(path.join(backup_directory, time.strftime(backup_filename)))
 
     backup = ""
 
@@ -191,8 +136,6 @@ def write_backup(db, backup_directory):
     f.write(backup)
     f.close()
 
-    remove_old_backups()
-
 
 def load_backup(db, filename, backup_directory):
     """Clear database and recreate from backup."""
@@ -209,10 +152,6 @@ def load_backup(db, filename, backup_directory):
 
     db.commit()
     db.flush()
-
-    # check if database is empty
-    for item in db.query(Expense):
-        print(item)
 
     # now open backup
     filename = path.join(backup_directory, filename)
@@ -232,6 +171,63 @@ def load_backup(db, filename, backup_directory):
                                            object_hook=datetime_parser))
                 db.add(new_object)
     db.flush()
+
+
+def remove_old_backups(backup_directory):
+    """Remove old backups.
+
+    Keep 5 newest backups of the day,
+    newest backup of every day this month,
+    newest backup of every month.
+    """
+    # read backup directory, only backups should be here
+    backup_list = listdir(backup_directory)
+    today = []
+    this_month = []
+    monthly = []
+    for filename in backup_list:
+        if not filename.endswith('.expense'):
+            # not a backup
+            continue
+
+        now = datetime.now()
+        try:
+            time = datetime.strptime(filename, backup_filename)
+            if time.date() == now.date():
+                today.append(time)
+            elif time.year == now.year and time.month == now.month:
+                this_month.append(time)
+            else:
+                monthly.append(time)
+        except ValueError:
+            print("Could not delete this old backup, did not understand"
+                  " the nameing format: %s" % filename)
+
+    # keep maximum 5 per day
+    today.sort(reverse=True)
+    to_remove = today[5:]
+
+    # keep maximum of 1 per day for the rest of the month
+    duplicates = []
+    for time in this_month:
+        same_date = [backup for backup in this_month
+                     if backup.date() == time.date()]
+        same_date.sort(reverse=True)
+        duplicates.extend(same_date[1:])
+    to_remove.extend(set(duplicates))
+
+    # for the rest, keep 1 per month
+    duplicates = []
+    for time in monthly:
+        same_date = [backup for backup in this_month
+                     if backup.month == time.month]
+        same_date.sort(reverse=True)
+        duplicates.extend(same_date[1:])
+    to_remove.extend(set(duplicates))
+
+    # now remove all files
+    for time in to_remove:
+        remove(path.join(backup_directory, time.strftime(backup_filename)))
 
 
 def write_config(config):
